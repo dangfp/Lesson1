@@ -34,7 +34,7 @@ def comparison(picks)
 	when ['s', 'r']
 		result = "Your picked Scissors and computer picked Rock.\n" + rock_breaks_scissors + computer_won_message
 	when ['s', 's']
-			result = "Your picked Scissors and computer picked Scissors.\n" + tie_message
+		result = "Your picked Scissors and computer picked Scissors.\n" + tie_message
 	end
 
 	return result
