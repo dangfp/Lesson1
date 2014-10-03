@@ -24,155 +24,128 @@
 # or else
 # 	it's a tie
 
-require 'pry'
-
-cards = []
-@player_cards = []
-@dealer_cards = []
-@player_total = 0
-@dealer_total = 0
-winter = nil
-
-def initialize_cards(cards)
-	4.times do
-		(1..13).each do |i|
-			cards << i
-		end
-	end
-end
-
-def first_deal_cards(cards)
-	@player_cards = cards.sample(2)
-	@dealer_cards = cards.sample(2)
-end
-
-def replace_greater_than_10_card(cards)
-	cards.map do |card|
-		if card >10
-			card = 10
-		else
-			card = card
-		end
-	end
-end
-
-def a_equal_11_calculator(cards)
-	sum = 0
-	cards.each do |num|
-		if num == 1
-			sum += 11
-		else
-			sum += num
-		end
-	end
-	return sum
-end
-
-def a_equal_1_calculator(cards)
-	sum = 0
-	cards.each do |num|
-		sum += num
-	end
-	return sum
-end
-
-def has_greater_than_10_cards?(cards)
-	if cards.include?(11) || cards.include?(12) || cards.include?(13)
-		return true
-	else
-		return false
-	end
-end
-
 def calculate_total(cards)
-	temp_cards = has_greater_than_10_cards?(cards) ? replace_greater_than_10_card(cards) : cards
-	temp_total = a_equal_11_calculator(temp_cards)
+	array = cards.map {|card| card[1]}
+	total = 0
 
-	if temp_cards.include?(1)
-		if temp_total > 21
-			temp_total = a_equal_1_calculator(temp_cards)
+	array.each do |value|
+		if value == 'A'
+			total += 11
+		elsif value == 'J' || value == 'Q' || value == 'k'
+			total += 10
 		else
-			temp_total
+			total += value.to_i
 		end
-	else
-		temp_total
 	end
-end
 
-def check_winter(player_stay, dealer_stay)
-	@player_total = calculate_total(@player_cards)
-	@dealer_total = calculate_total(@dealer_cards)
-
-	if @player_total > 21
-		return "Dealer"
-	elsif @dealer_total > 21
-		return "Player"
-	elsif @player_total == 21 && @dealer_total < 21
-		return "Player"
-	elsif @player_total < 21 && @dealer_total == 21
-		return "Dealer"
-	elsif player_stay && dealer_stay && @player_total < 21 && @player_total > @dealer_total
-		return "Player"
-	elsif player_stay && dealer_stay && @dealer_total < 21 && @player_total < @dealer_total
-		return "Dealer"
+	# correct for A
+	array.select{|value| value == 'A'}.count.times do
+		if total > 21
+			total -= 10
+		end
 	end
-	
+
+	total
 end
 
-def show_cards_message
-	puts "#Player'cards is #{@player_cards} and total is #{@player_total}."
-	puts "#Dealer'cards is #{@dealer_cards} and total is #{@dealer_total}."
+# start  game
+puts "Welcome to Blackjack!"
+
+suits = ['H', 'D', 'S', 'C']
+cards = ['2', '3', '4', '5', '6', '7', '8', '10', 'J', 'Q', 'K', 'A']
+
+deck = suits.product(cards)
+deck.shuffle!
+
+# Deal cards
+playercards = []
+dealercards = []
+
+2.times do
+	playercards << deck.pop
+	dealercards << deck.pop
 end
 
-def show_winter_message(winter)
-	puts "#{winter} won!"
-	show_cards_message
+playertotal = calculate_total(playercards)
+dealertotal = calculate_total(dealercards)
+
+puts "Player cards is: #{playercards[0]} #{playercards[1]} and total is: #{playertotal}"
+puts "Dealer cards is: #{dealercards[0]} #{dealercards[1]} and total is: #{dealertotal}"
+
+if playertotal == 21 && dealertotal == 21
+	puts "It's tie."
+	exit
+elsif playertotal > 21
+	puts "Dealer won!You busts."
+	exit
+elsif dealertotal > 21
+	puts "You won!Dealer busts."
+	exit
 end
 
-initialize_cards(cards)
+# Player turn
+while playertotal < 21
+	puts "What would you like to do? 1) hit 2) stay"
+  hit_or_stay = gets.chomp
 
-first_deal_cards(cards)
+  if !['1', '2'].include?(hit_or_stay)
+    puts "Error: you must enter 1 or 2"
+    next
+  end
 
-player_stay = false
-dealer_stay = false
+  if hit_or_stay == '2'
+  	break
+  end
 
+  newcard = deck.pop
+  puts "Dealing card to player: #{newcard}"
+  playercards << newcard
+  playertotal = calculate_total(playercards)
+  puts "Now, your total is: #{playertotal}"
 
-winter = check_winter(player_stay, dealer_stay)
+  if playertotal == 21
+  	puts "You hit blackjack, you win!"
+  	exit
+  elsif playertotal > 21
+  	puts "You busts, dealer win."
+  	exit
+	end
 
-if winter
-	show_winter_message(winter)
+end
+
+# Dealer turn
+while dealertotal < 17
+	newcard = deck.pop
+	puts "Dealing card to dealer: #{newcard}"
+	dealercards << newcard
+	dealertotal = calculate_total(dealercards)
+	puts "Now, dealer total is: #{dealertotal}"
+
+	if dealertotal == 21
+		puts "Dealer hit blackjack, dealer win."
+		exit
+	elsif dealertotal > 21
+		puts "Dealer busts, you win!"
+		exit
+	end
+
+end
+
+#compare hands
+puts "Your cards:"
+playercards.each do |card|
+	puts "=> #{card}"
+end
+
+puts "Dealer's cards: "
+dealercards.each do |card|
+	puts "=> #{card}"
+end
+
+if playertotal > dealertotal
+	puts "You win."
+elsif playertotal < dealertotal
+	puts "Dealer win."
 else
-	begin
-		puts "#Player'cards is #{@player_cards} and total is #{@player_total}."
-
-		begin
-			puts "Hit or stay?(h/s)"
-			player_selection = gets.chomp.downcase
-		end until ['h', 's'].include?(player_selection)
-
-		if player_selection == 'h'
-			@player_cards << cards.sample
-			winter = check_winter(player_stay, dealer_stay)
-		end
-	end until @player_total >= 21 || player_selection == 's'
-
-	player_stay = true
-
-	while  @dealer_total < 17
-		@dealer_cards << cards.sample
-		winter = check_winter(player_stay, dealer_stay)
-	end
-
-	dealer_stay = true
-
-	winter = check_winter(player_stay, dealer_stay)
-
-	if @player_total == @dealer_total
-		puts "It's tie."
-		show_cards_message
-	end
-
-	if winter
-		show_winter_message(winter)
-	end
+	puts "It's tie."
 end
